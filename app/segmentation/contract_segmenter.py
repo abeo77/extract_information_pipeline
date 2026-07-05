@@ -10,7 +10,7 @@ from langchain_core.documents import Document
 from app.extraction.schemas import DocumentSegment
 
 
-DEFAULT_MAX_TOKENS = 700
+DEFAULT_MAX_TOKENS = 500
 DEFAULT_MIN_TOKENS = 40
 
 TOKEN_RE = re.compile(r"\S+")

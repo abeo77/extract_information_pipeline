@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import time
 from typing import Any
 
 from app.extraction.llm1_input import prepare_llm1_batches, remove_reason_fields
@@ -15,7 +16,7 @@ from app.extraction.llm_json import (
 )
 from app.extraction.prompts import LLM1_KEYWORD_EXTRACTION_PROMPT
 from app.extraction.schemas import DocumentSegment, Llm1BatchInput
-from app.services.parallel_service import ordered_parallel_map
+from app.services.parallel_service import ordered_parallel_map_with_progress
 
 
 PROVISION_TYPES = {
@@ -51,27 +52,50 @@ def extract_keywords(
     chat_model,
     batch_size: int = 50,
     max_parallel_calls: int = 1,
+    on_llm_event=None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Extract LLM1 keyword groups from compact segment batches."""
     batches = prepare_llm1_batches(segments, batch_size=batch_size)
-    batch_groups = ordered_parallel_map(
+    batch_results = ordered_parallel_map_with_progress(
         batches,
         lambda batch: _extract_keyword_batch(batch, chat_model),
         max_workers=max_parallel_calls,
+        on_result=lambda index, result: _notify_llm_event(
+            on_llm_event,
+            "LLM1",
+            index,
+            len(batches),
+            result["trace"],
+        ),
     )
 
     keyword_groups: list[dict[str, Any]] = []
-    for groups in batch_groups:
-        keyword_groups.extend(groups)
+    for result in batch_results:
+        keyword_groups.extend(result["groups"])
 
     return remove_reason_fields(keyword_groups), len(batches)
 
 
-def _extract_keyword_batch(batch: Llm1BatchInput, chat_model) -> list[dict[str, Any]]:
-    response = chat_model.invoke(_build_llm1_prompt(batch))
-    payload = parse_json_response(response_text(response), "LLM1")
+def _extract_keyword_batch(batch: Llm1BatchInput, chat_model) -> dict[str, Any]:
+    prompt = _build_llm1_prompt(batch)
+    started = time.perf_counter()
+    response = chat_model.invoke(prompt)
+    raw_response = response_text(response)
+    payload = parse_json_response(raw_response, "LLM1")
     groups = require_list(payload, "keyword_groups", "LLM1")
-    return _normalize_keyword_groups(groups, batch)
+    normalized_groups = _normalize_keyword_groups(groups, batch)
+    return {
+        "groups": normalized_groups,
+        "trace": {
+            "prompt": prompt,
+            "raw_response": raw_response,
+            "parsed_payload": payload,
+            "seconds": round(time.perf_counter() - started, 2),
+            "input_count": len(batch.segments),
+            "output_count": len(normalized_groups),
+            "summary": _trace_summary(normalized_groups),
+        },
+    }
 
 
 def _build_llm1_prompt(batch: Llm1BatchInput) -> str:
@@ -197,3 +221,29 @@ def _infer_provision_type(value: str) -> str:
         if any(needle in text for needle in needles):
             return provision_type
     return "other"
+
+
+def _trace_summary(groups: list[dict[str, Any]]) -> str:
+    keywords = [
+        str(group.get("representative_keyword") or "").strip()
+        for group in groups
+        if group.get("representative_keyword")
+    ]
+    if not keywords:
+        return "LLM1 did not return keyword groups for this batch."
+    preview = ", ".join(keywords[:8])
+    suffix = "" if len(keywords) <= 8 else f", +{len(keywords) - 8} more"
+    return f"LLM1 extracted {len(keywords)} keyword group(s): {preview}{suffix}."
+
+
+def _notify_llm_event(callback, stage: str, index: int, total: int, trace: dict[str, Any]) -> None:
+    if not callback:
+        return
+    callback(
+        {
+            "stage": stage,
+            "batch_index": index + 1,
+            "batch_total": total,
+            **trace,
+        }
+    )

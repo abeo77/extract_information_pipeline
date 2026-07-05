@@ -13,5 +13,5 @@ def render_segment_viewer(path):
     segments = segment_documents(normalize_documents(load_document(path)))
     st.write(f"{len(segments)} segments")
     for segment in segments:
-        with st.expander(f"{segment.segment_type} | page {segment.page} | {segment.title or '-'}"):
+        with st.expander(f"{segment.segment_id} | page {segment.page} | {segment.title or '-'}"):
             st.code(segment.text)

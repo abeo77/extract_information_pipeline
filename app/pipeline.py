@@ -27,6 +27,7 @@ def run_pipeline(
     debug_segments_full: bool = False,
     debug_llm1_input: bool = False,
     on_step: Callable[[dict], None] | None = None,
+    on_llm_event: Callable[[dict], None] | None = None,
 ) -> PipelineResult:
     total = StepTimer()
 
@@ -79,6 +80,11 @@ def run_pipeline(
         llm1_chat_model,
         batch_size=config.keyword_batch_size,
         max_parallel_calls=config.max_parallel_llm_calls,
+        on_llm_event=_llm_event_callback(
+            on_llm_event,
+            provider=config.llm1_provider,
+            model=config.llm1_model,
+        ),
     )
     print(
         f"[LLM1] Extracted {len(keyword_groups)} keyword group(s) "
@@ -105,6 +111,11 @@ def run_pipeline(
         batch_size=config.evidence_batch_size,
         max_segments_per_group=config.max_evidence_segments_per_group,
         max_parallel_calls=config.max_parallel_llm_calls,
+        on_llm_event=_llm_event_callback(
+            on_llm_event,
+            provider=config.llm2_provider,
+            model=config.llm2_model,
+        ),
     )
     print(
         f"[LLM2] Extracted evidence for {len(keyword_groups)} keyword group(s) "
@@ -161,6 +172,26 @@ def _notify_step(callback: Callable[[dict], None] | None, key: str, label: str, 
                 **metadata,
             }
         )
+
+
+def _llm_event_callback(
+    callback: Callable[[dict], None] | None,
+    provider: str,
+    model: str,
+) -> Callable[[dict], None] | None:
+    if callback is None:
+        return None
+
+    def wrapped(event: dict) -> None:
+        callback(
+            {
+                "provider": provider,
+                "model": model,
+                **event,
+            }
+        )
+
+    return wrapped
 
 
 def print_segments_debug(segments, full_text: bool = False) -> None:

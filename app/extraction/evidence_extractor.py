@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import copy
+import time
 from typing import Any
 
 from app.extraction.llm_json import (
@@ -14,7 +15,7 @@ from app.extraction.llm_json import (
 )
 from app.extraction.prompts import LLM2_EVIDENCE_EXTRACTION_PROMPT
 from app.extraction.schemas import DocumentSegment
-from app.services.parallel_service import ordered_parallel_map
+from app.services.parallel_service import ordered_parallel_map_with_progress
 
 
 def extract_evidence(
@@ -24,6 +25,7 @@ def extract_evidence(
     batch_size: int = 10,
     max_segments_per_group: int = 5,
     max_parallel_calls: int = 1,
+    on_llm_event=None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Attach LLM2 evidences to LLM1 keyword groups in small batches."""
     if batch_size <= 0:
@@ -43,22 +45,44 @@ def extract_evidence(
         max_segments_per_group,
     )
 
-    batch_groups = ordered_parallel_map(
+    batch_results = ordered_parallel_map_with_progress(
         batches,
         lambda batch: _extract_evidence_batch(batch, chat_model),
         max_workers=max_parallel_calls,
+        on_result=lambda index, result: _notify_llm_event(
+            on_llm_event,
+            "LLM2",
+            index,
+            len(batches),
+            result["trace"],
+        ),
     )
-    for groups in batch_groups:
-        enriched_groups.extend(groups)
+    for result in batch_results:
+        enriched_groups.extend(result["groups"])
 
     return enriched_groups, len(batches)
 
 
-def _extract_evidence_batch(batch: dict[str, Any], chat_model) -> list[dict[str, Any]]:
-    response = chat_model.invoke(_build_llm2_prompt(batch))
-    payload = parse_json_response(response_text(response), "LLM2")
+def _extract_evidence_batch(batch: dict[str, Any], chat_model) -> dict[str, Any]:
+    prompt = _build_llm2_prompt(batch)
+    started = time.perf_counter()
+    response = chat_model.invoke(prompt)
+    raw_response = response_text(response)
+    payload = parse_json_response(raw_response, "LLM2")
     returned_groups = require_list(payload, "keyword_groups", "LLM2")
-    return _merge_evidence(batch["keyword_groups"], returned_groups)
+    merged_groups = _merge_evidence(batch["keyword_groups"], returned_groups)
+    return {
+        "groups": merged_groups,
+        "trace": {
+            "prompt": prompt,
+            "raw_response": raw_response,
+            "parsed_payload": payload,
+            "seconds": round(time.perf_counter() - started, 2),
+            "input_count": len(batch["keyword_groups"]),
+            "output_count": len(merged_groups),
+            "summary": _trace_summary(merged_groups),
+        },
+    }
 
 
 def _build_evidence_batches(
@@ -266,3 +290,39 @@ def _confidence(value: Any) -> float:
     except (TypeError, ValueError):
         return 0.0
     return min(1.0, max(0.0, confidence))
+
+
+def _trace_summary(groups: list[dict[str, Any]]) -> str:
+    found = sum(1 for group in groups if group.get("exact_text"))
+    missing = sum(
+        1
+        for group in groups
+        for evidence in group.get("evidences", [])
+        if isinstance(evidence, dict)
+        and evidence.get("validation_status") == "not_found"
+    )
+    keywords = [
+        str(group.get("representative_keyword") or "").strip()
+        for group in groups
+        if group.get("representative_keyword")
+    ]
+    preview = ", ".join(keywords[:6])
+    suffix = "" if len(keywords) <= 6 else f", +{len(keywords) - 6} more"
+    return (
+        f"LLM2 attached evidence for {len(groups)} group(s); "
+        f"{found} with exact_text, {missing} not_found. "
+        f"Groups: {preview}{suffix}."
+    )
+
+
+def _notify_llm_event(callback, stage: str, index: int, total: int, trace: dict[str, Any]) -> None:
+    if not callback:
+        return
+    callback(
+        {
+            "stage": stage,
+            "batch_index": index + 1,
+            "batch_total": total,
+            **trace,
+        }
+    )

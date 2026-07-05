@@ -1,6 +1,9 @@
 # Local environment
-.env
 venv/
+.venv/
+__pycache__/
+*.pyc
+.env
 
 # Python/runtime caches
 __pycache__/
