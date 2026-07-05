@@ -1,0 +1,49 @@
+BASIC SERVICE AGREEMENT
+
+This Basic Service Agreement (the "Agreement") is made between Alpha Solutions Ltd. ("Service Provider") and Beta Retail JSC ("Client").
+
+1. Parties
+Alpha Solutions Ltd. will provide software support and maintenance services to Beta Retail JSC. The parties agree to follow the terms and conditions stated in this Agreement.
+
+2. Effective Date and Contract Term
+Effective Date: January 1, 2026.
+Commencement Date: January 1, 2026.
+Start Date: January 1, 2026.
+End Date: December 31, 2026.
+Expiration Date: December 31, 2026.
+This Agreement will remain in effect from the Effective Date until the End Date unless terminated earlier under this Agreement.
+
+3. Scope of Services
+The Service Provider shall provide system monitoring, bug fixing, monthly maintenance, and technical support for the Client's internal retail management system. The services include issue investigation, software patching, and basic user support.
+
+4. Payment Terms
+The Client shall pay the Service Provider a monthly service fee of USD 2,000. Each invoice shall be issued on the first business day of each month. Payment is due within fifteen (15) days after the invoice date.
+
+5. Renewal Clause
+This Agreement shall automatically renew for successive one-year terms unless either party gives written notice of non-renewal at least thirty (30) days before the end of the current term. The renewal term will follow the same payment terms unless both parties agree otherwise in writing.
+
+6. Termination
+Either party may terminate this Agreement by giving thirty (30) days' written notice to the other party. The Client may terminate immediately if the Service Provider materially breaches its service obligations and fails to cure the breach within ten (10) business days.
+
+7. Confidentiality
+Each party shall keep confidential all non-public business, technical, financial, and customer information received from the other party. Confidential information may not be disclosed to any third party without prior written consent, except as required by law.
+
+8. Liability
+The Service Provider's total liability under this Agreement shall not exceed the total service fees paid by the Client during the three (3) months before the claim arose. Neither party shall be liable for indirect, incidental, or consequential damages.
+
+9. Governing Law
+This Agreement shall be governed by and interpreted in accordance with the laws of Vietnam. Any dispute arising from this Agreement shall first be resolved through good-faith negotiation between the parties.
+
+10. Notices
+All notices under this Agreement must be in writing and sent by email or registered mail to the contact address provided by each party.
+
+11. Signatures
+By signing below, the parties agree to be bound by this Agreement.
+
+Service Provider: Alpha Solutions Ltd.
+Authorized Representative: ______________________
+Date: ______________________
+
+Client: Beta Retail JSC
+Authorized Representative: ______________________
+Date: ______________________

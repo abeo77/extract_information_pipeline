@@ -1,0 +1,220 @@
+{
+  "schema_version": "provision_ground_truth_v1",
+  "purpose": "Ground truth for testing contract keyword/provision extraction and evidence text matching.",
+  "text_normalization": [
+    "Replace non-breaking spaces and zero-width characters",
+    "Normalize Unicode dash variants to hyphen",
+    "Join split hyphenated line breaks",
+    "Collapse repeated whitespace into a single space"
+  ],
+  "documents_count": 1,
+  "total_ground_truth_provisions": 13,
+  "document": {
+    "document_name": "1(1).pdf",
+    "contract_type": "Professional Software Development and Maintenance Agreement - short sample",
+    "total_pages": 2,
+    "total_ground_truth_provisions": 13,
+    "provisions": [
+      {
+        "provision_id": "11_000",
+        "section_number": null,
+        "provision": "Parties / Agreement Intro",
+        "specific_keywords": [
+          "Parties / Agreement Intro",
+          "Parties",
+          "Service Provider",
+          "Client",
+          "Employer",
+          "Employee"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "Short sample contract for keyword grouping and evidence extraction testing This Professional Software Development and Maintenance Agreement (the \"Agreement\") is made between Orion Digital Solutions Pte. Ltd. (\"Service Provider\") and Lotus Retail Group Joint Stock Company (\"Client\")."
+      },
+      {
+        "provision_id": "11_001",
+        "section_number": "1",
+        "provision": "Parties",
+        "specific_keywords": [
+          "Parties",
+          "Service Provider",
+          "Client",
+          "Employer",
+          "Employee"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "1. Parties The Service Provider is Orion Digital Solutions Pte. Ltd., a Singapore company. The Client is Lotus Retail Group Joint Stock Company, a Vietnamese company. The parties agree to perform their obligations in good faith and in accordance with this Agreement."
+      },
+      {
+        "provision_id": "11_002",
+        "section_number": "2",
+        "provision": "Effective Date and Contract Term",
+        "specific_keywords": [
+          "Effective Date and Contract Term",
+          "Effective Date",
+          "Commencement Date",
+          "Start Date",
+          "End Date",
+          "Expiration Date",
+          "Term",
+          "Expiration",
+          "Probation"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "2. Effective Date and Contract Term Effective Date: April 1, 2026. Commencement Date: April 1, 2026. Start Date: April 1, 2026. End Date: March 31, 2027. Expiration Date: March 31, 2027. This Agreement remains effective from the Effective Date until the End Date unless terminated earlier under the termination clause."
+      },
+      {
+        "provision_id": "11_003",
+        "section_number": "3",
+        "provision": "Scope of Services",
+        "specific_keywords": [
+          "Scope of Services",
+          "Services",
+          "Software Development",
+          "Maintenance"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "3. Scope of Services The Service Provider shall design, develop, maintain, and support a retail operations platform for the Client. The services include requirements analysis, software development, API integration, bug fixing, monthly maintenance, production monitoring, and technical support for authorized users."
+      },
+      {
+        "provision_id": "11_004",
+        "section_number": "4",
+        "provision": "Deliverables and Acceptance",
+        "specific_keywords": [
+          "Deliverables and Acceptance",
+          "Deliverables",
+          "Milestones",
+          "Acceptance Criteria",
+          "Acceptance",
+          "Review Period",
+          "Deemed Acceptance"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "4. Deliverables and Acceptance The Service Provider shall deliver source code, deployment scripts, user documentation, and monthly maintenance reports. The Client shall review each deliverable within five (5) business days after receipt. A deliverable is accepted when the Client confirms acceptance in writing or does not reject it with specific defects within the review period."
+      },
+      {
+        "provision_id": "11_005",
+        "section_number": "5",
+        "provision": "Payment Terms",
+        "specific_keywords": [
+          "Payment Terms",
+          "Term",
+          "Effective Date",
+          "Expiration",
+          "Probation",
+          "Invoice",
+          "Late Payment",
+          "Service Fee"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "5. Payment Terms The Client shall pay the Service Provider a monthly service fee of USD 4,500. Each invoice shall be issued on the first business day of each month. Payment is due within fifteen (15) days after the invoice date. Late payments may be subject to a service suspension notice if unpaid for more than ten (10) business days."
+      },
+      {
+        "provision_id": "11_006",
+        "section_number": "6",
+        "provision": "Renewal Clause",
+        "specific_keywords": [
+          "Renewal Clause",
+          "Renewal",
+          "Extension",
+          "Non-Renewal Notice"
+        ],
+        "page_start": 1,
+        "page_end": 2,
+        "text": "6. Renewal Clause This Agreement shall automatically renew for successive one-year terms unless either party gives written notice of non-renewal at least thirty (30) days before the end of the current term. The renewal term will follow the same payment terms unless both parties agree otherwise in writing. Page 2 - operative clauses continued"
+      },
+      {
+        "provision_id": "11_007",
+        "section_number": "7",
+        "provision": "Termination",
+        "specific_keywords": [
+          "Termination",
+          "Term",
+          "Effective Date",
+          "Expiration",
+          "Probation",
+          "Suspension",
+          "Handover"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "7. Termination Either party may terminate this Agreement by giving thirty (30) days written notice to the other party. The Client may terminate immediately if the Service Provider materially breaches its service obligations and fails to cure the breach within ten (10) business days after receiving written notice."
+      },
+      {
+        "provision_id": "11_008",
+        "section_number": "8",
+        "provision": "Confidentiality",
+        "specific_keywords": [
+          "Confidentiality",
+          "Non-Disclosure",
+          "Confidential Information"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "8. Confidentiality Each party shall keep confidential all non-public business, technical, financial, security, and customer information received from the other party. Confidential information may not be disclosed to any third party without prior written consent, except as required by law or by a competent authority."
+      },
+      {
+        "provision_id": "11_009",
+        "section_number": "9",
+        "provision": "Data Security and Access Control",
+        "specific_keywords": [
+          "Data Security and Access Control",
+          "Data Protection",
+          "Data Security",
+          "Privacy",
+          "Access Control",
+          "GDPR"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "9. Data Security and Access Control The Service Provider shall use reasonable administrative, technical, and organizational safeguards to protect Client data. Access to production systems must be limited to authorized personnel. Security incidents affecting Client data must be reported to the Client within forty-eight (48) hours after discovery."
+      },
+      {
+        "provision_id": "11_010",
+        "section_number": "10",
+        "provision": "Liability",
+        "specific_keywords": [
+          "Liability",
+          "Limitation of Liability",
+          "Damages",
+          "Liability Cap"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "10. Liability The Service Provider total liability under this Agreement shall not exceed the total service fees paid by the Client during the three (3) months before the claim arose. Neither party shall be liable for indirect, incidental, special, punitive, or consequential damages, including loss of profits or business interruption."
+      },
+      {
+        "provision_id": "11_011",
+        "section_number": "11",
+        "provision": "Governing Law and Dispute Resolution",
+        "specific_keywords": [
+          "Governing Law and Dispute Resolution",
+          "Governing Law",
+          "Dispute Resolution",
+          "Arbitration",
+          "Court"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "11. Governing Law and Dispute Resolution This Agreement shall be governed by and interpreted in accordance with the laws of Vietnam. Any dispute arising from this Agreement shall first be resolved through good-faith negotiation between the parties. If negotiation fails, the dispute may be submitted to a competent court in Ho Chi Minh City, Vietnam."
+      },
+      {
+        "provision_id": "11_012",
+        "section_number": "12",
+        "provision": "Notices",
+        "specific_keywords": [
+          "Notices",
+          "Written Notice"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "12. Notices All notices under this Agreement must be in writing and sent by email or registered mail to the contact address provided by each party. A notice is deemed received when delivered successfully by email or three (3) business days after being sent by registered mail. Authorized representatives may sign this Agreement electronically. Signature blocks are intentionally omitted from this testing sample."
+      }
+    ]
+  }
+}

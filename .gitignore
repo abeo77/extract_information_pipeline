@@ -1,0 +1,23 @@
+# Local environment
+.env
+venv/
+
+# Python/runtime caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.deepeval/
+.playwright-mcp/
+
+# Editor/local machine state
+.vscode/
+
+# Runtime logs
+*.log
+
+# Uploaded files and generated outputs
+data/input/
+data/output/
+
+# Notebook checkpoints
+.ipynb_checkpoints/

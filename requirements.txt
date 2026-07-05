@@ -1,0 +1,13 @@
+fastapi
+langchain
+langchain-core
+langchain-groq
+langchain-google-genai
+langchain-openai
+pydantic
+pypdf
+python-dotenv
+python-multipart
+pytest
+streamlit
+uvicorn

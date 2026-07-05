@@ -1,0 +1,203 @@
+{
+  "source_file": "data/sample_docs/3.txt",
+  "purpose": "Ground truth for testing document segmentation on the Amendment #3 manufacturing agreement sample.",
+  "notes": [
+    "This ground truth is written from the document structure, not copied mechanically from current segmenter output.",
+    "The document has a long introductory recital section followed by numbered amendment sections 1 through 9.",
+    "Inline numbered sections must be detected even when they appear inside a long line.",
+    "Calendar years such as 2018, 2019, and 2017 must not be treated as section numbers.",
+    "Confidential treatment legends, page initials, and exhibit/footer artifacts should not create legal clause segments."
+  ],
+  "expected_segment_count": 10,
+  "segments": [
+    {
+      "order": 1,
+      "expected_type": "paragraph",
+      "expected_title": null,
+      "description": "Introductory confidential legend, amendment title, parties, background recitals, and NOW THEREFORE lead-in.",
+      "starts_with": "Confidential treatment has been requested",
+      "must_contain": [
+        "Amendment #3 to the Manufacturing Agreement",
+        "Amendment Effective Date",
+        "ADMA BioManufacturing, LLC",
+        "Sanofi Pasteur S.A.",
+        "WHEREAS",
+        "NOW, THEREFORE"
+      ],
+      "must_not_contain": [
+        "1. All capitalized terms",
+        "2. The supply terms"
+      ]
+    },
+    {
+      "order": 2,
+      "expected_type": "numbered_section",
+      "expected_section_number": "1",
+      "expected_title_contains": "All capitalized terms",
+      "description": "Definitions carry-over clause.",
+      "starts_with": "1. All capitalized terms",
+      "must_contain": [
+        "shall have the meaning as set out in the Agreement"
+      ],
+      "must_not_contain": [
+        "2. The supply terms"
+      ]
+    },
+    {
+      "order": 3,
+      "expected_type": "numbered_section",
+      "expected_section_number": "2",
+      "expected_title_contains": "The supply terms",
+      "description": "Supply terms amendment, updated supply plan, minimum volume, and liquidated damages language.",
+      "starts_with": "2. The supply terms",
+      "must_contain": [
+        "Prior Supply Terms",
+        "Updated Supply Plan",
+        "Minimum Volume",
+        "liquidated damages",
+        "Q3 2018 to Q3 2019",
+        "Q4 2018 up to Q4 2019"
+      ],
+      "must_not_contain": [
+        "2019. Attached hereto as Exhibit A is a detailed supply plan",
+        "3. Furthermore"
+      ],
+      "special_assertions": [
+        "The year 2019 must remain inside section 2 and must not become a separate numbered section."
+      ]
+    },
+    {
+      "order": 4,
+      "expected_type": "numbered_section",
+      "expected_section_number": "3",
+      "expected_title_contains": "FDA Warning Letter",
+      "description": "Immediate termination right if FDA warning letter status affects supply.",
+      "starts_with": "3. Furthermore",
+      "must_contain": [
+        "FDA Warning Letter",
+        "terminate immediately",
+        "remaining Source Plasma",
+        "Quality Agreement"
+      ],
+      "must_not_contain": [
+        "4. In the event of a non-conformance"
+      ]
+    },
+    {
+      "order": 5,
+      "expected_type": "numbered_section",
+      "expected_section_number": "4",
+      "expected_title_contains": "non-conformance",
+      "description": "Source Plasma non-conformance, damage, loss, and no compensation for unproduced batch.",
+      "starts_with": "4. In the event of a non-conformance",
+      "must_contain": [
+        "damaged Source Plasma",
+        "transfer of risks",
+        "Sanofi Pasteur shall not be responsible",
+        "unproduced batch"
+      ],
+      "must_not_contain": [
+        "5. In consideration"
+      ]
+    },
+    {
+      "order": 6,
+      "expected_type": "numbered_section",
+      "expected_section_number": "5",
+      "expected_title_contains": "Compensation Fee",
+      "description": "Seven million USD compensation fee, installment schedule, invoicing address, and full compensation language.",
+      "starts_with": "5. In consideration",
+      "must_contain": [
+        "seven million (7,000,000 USD)",
+        "Compensation Fee",
+        "five installments",
+        "December 31,2017",
+        "Sanofi Pasteur SA DSFF Pole de Lyon",
+        "ADMA declares that the Compensation Fee is fair and equitable"
+      ],
+      "must_not_contain": [
+        "6. Upon full payment"
+      ]
+    },
+    {
+      "order": 7,
+      "expected_type": "numbered_section",
+      "expected_section_number": "6",
+      "expected_title_contains": "full payment of the Compensation Fee",
+      "description": "Mutual release after full payment of the compensation fee.",
+      "starts_with": "6. Upon full payment",
+      "must_contain": [
+        "releases, remises and forever discharges",
+        "actions, causes of action, suits",
+        "Updated Supply Plan",
+        "Compensation Fee"
+      ],
+      "must_not_contain": [
+        "7. The Parties further agree"
+      ]
+    },
+    {
+      "order": 8,
+      "expected_type": "numbered_section",
+      "expected_section_number": "7",
+      "expected_title_contains": "Section 6.5",
+      "description": "Amendment to Section 6.5, risk of loss, limitation of liability, liability cap, and exclusion of consequential damages.",
+      "starts_with": "7. The Parties further agree to amend Section 6.5",
+      "must_contain": [
+        "liability cap",
+        "Sanofi Pasteur Property",
+        "risk of loss",
+        "6.5 Limitation of Liability",
+        "incidental, indirect, special and consequential or punitive damages",
+        "gross negligence or the willful misconduct"
+      ],
+      "must_not_contain": [
+        "8. The Parties further agree to amend that certain Quality and Technical Agreement"
+      ]
+    },
+    {
+      "order": 9,
+      "expected_type": "numbered_section",
+      "expected_section_number": "8",
+      "expected_title_contains": "Quality and Technical Agreement",
+      "description": "Amendment to the Quality Agreement regarding Source Plasma storage address and consistency with Amendment #3.",
+      "starts_with": "8. The Parties further agree to amend that certain Quality and Technical Agreement",
+      "must_contain": [
+        "Quality Agreement",
+        "Source Plasma shall be stocked",
+        "within 60 days after the Amendment Effective Date"
+      ],
+      "must_not_contain": [
+        "9. All other terms"
+      ]
+    },
+    {
+      "order": 10,
+      "expected_type": "numbered_section",
+      "expected_section_number": "9",
+      "expected_title_contains": "All other terms",
+      "description": "Other terms remain effective, witness clause, signatures, names, titles, and dates.",
+      "starts_with": "9. All other terms",
+      "must_contain": [
+        "shall remain in full force and effect",
+        "IN WITNESS WHEREOF",
+        "Sanofi Pasteur, S.A.",
+        "Vincent Hingot",
+        "ADMA BioManufacturing, LLC",
+        "Adam Grossman",
+        "12-21-2017"
+      ],
+      "must_not_contain": [
+        "Exhibit A [***]"
+      ]
+    }
+  ],
+  "global_must_not_create_segments_for": [
+    "BPC Initials ___ Sanofi Pasteur Initials ___",
+    "ADMA Initials ___ Sanofi Pasteur Initials ___ A-1",
+    "Exhibit A [***]",
+    "2017",
+    "2018",
+    "2019"
+  ]
+}

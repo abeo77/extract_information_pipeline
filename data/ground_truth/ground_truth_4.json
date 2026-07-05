@@ -1,0 +1,198 @@
+{
+  "schema_version": "provision_ground_truth_v1",
+  "purpose": "Ground truth for testing contract keyword/provision extraction and evidence text matching.",
+  "text_normalization": [
+    "Replace non-breaking spaces and zero-width characters",
+    "Normalize Unicode dash variants to hyphen",
+    "Join split hyphenated line breaks",
+    "Collapse repeated whitespace into a single space"
+  ],
+  "documents_count": 1,
+  "total_ground_truth_provisions": 12,
+  "document": {
+    "document_name": "4(1).pdf",
+    "contract_type": "Basic Service Agreement",
+    "total_pages": 2,
+    "total_ground_truth_provisions": 12,
+    "provisions": [
+      {
+        "provision_id": "41_000",
+        "section_number": null,
+        "provision": "Parties / Agreement Intro",
+        "specific_keywords": [
+          "Parties / Agreement Intro",
+          "Parties",
+          "Service Provider",
+          "Client",
+          "Employer",
+          "Employee"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "This Basic Service Agreement (the \"Agreement\") is made between Alpha Solutions Ltd. (\"Service Provider\") and Beta Retail JSC (\"Client\")."
+      },
+      {
+        "provision_id": "41_001",
+        "section_number": "1",
+        "provision": "Parties",
+        "specific_keywords": [
+          "Parties",
+          "Service Provider",
+          "Client",
+          "Employer",
+          "Employee"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "1. Parties Alpha Solutions Ltd. will provide software support and maintenance services to Beta Retail JSC. The parties agree to follow the terms and conditions stated in this Agreement."
+      },
+      {
+        "provision_id": "41_002",
+        "section_number": "2",
+        "provision": "Effective Date and Contract Term",
+        "specific_keywords": [
+          "Effective Date and Contract Term",
+          "Effective Date",
+          "Commencement Date",
+          "Start Date",
+          "End Date",
+          "Expiration Date",
+          "Term",
+          "Expiration",
+          "Probation"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "2. Effective Date and Contract Term Effective Date: January 1, 2026. Commencement Date: January 1, 2026. Start Date: January 1, 2026. End Date: December 31, 2026. Expiration Date: December 31, 2026. This Agreement will remain in effect from the Effective Date until the End Date unless terminated earlier under this Agreement."
+      },
+      {
+        "provision_id": "41_003",
+        "section_number": "3",
+        "provision": "Scope of Services",
+        "specific_keywords": [
+          "Scope of Services",
+          "Services",
+          "Software Development",
+          "Maintenance"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "3. Scope of Services The Service Provider shall provide system monitoring, bug fixing, monthly maintenance, and technical support for the Client's internal retail management system. The services include issue investigation, software patching, and basic user support."
+      },
+      {
+        "provision_id": "41_004",
+        "section_number": "4",
+        "provision": "Payment Terms",
+        "specific_keywords": [
+          "Payment Terms",
+          "Term",
+          "Effective Date",
+          "Expiration",
+          "Probation",
+          "Invoice",
+          "Late Payment",
+          "Service Fee"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "4. Payment Terms The Client shall pay the Service Provider a monthly service fee of USD 2,000. Each invoice shall be issued on the first business day of each month. Payment is due within fifteen (15) days after the invoice date."
+      },
+      {
+        "provision_id": "41_005",
+        "section_number": "5",
+        "provision": "Renewal Clause",
+        "specific_keywords": [
+          "Renewal Clause",
+          "Renewal",
+          "Extension",
+          "Non-Renewal Notice"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "5. Renewal Clause This Agreement shall automatically renew for successive one-year terms unless either party gives written notice of non-renewal at least thirty (30) days before the end of the current term. The renewal term will follow the same payment terms unless both parties agree otherwise in writing."
+      },
+      {
+        "provision_id": "41_006",
+        "section_number": "6",
+        "provision": "Termination",
+        "specific_keywords": [
+          "Termination",
+          "Term",
+          "Effective Date",
+          "Expiration",
+          "Probation",
+          "Suspension",
+          "Handover"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "6. Termination Either party may terminate this Agreement by giving thirty (30) days' written notice to the other party. The Client may terminate immediately if the Service Provider materially breaches its service obligations and fails to cure the breach within ten (10) business days."
+      },
+      {
+        "provision_id": "41_007",
+        "section_number": "7",
+        "provision": "Confidentiality",
+        "specific_keywords": [
+          "Confidentiality",
+          "Non-Disclosure",
+          "Confidential Information"
+        ],
+        "page_start": 1,
+        "page_end": 1,
+        "text": "7. Confidentiality Each party shall keep confidential all non-public business, technical, financial, and customer information received from the other party. Confidential information may not be disclosed to any third party without prior written consent, except as required by law."
+      },
+      {
+        "provision_id": "41_008",
+        "section_number": "8",
+        "provision": "Liability",
+        "specific_keywords": [
+          "Liability",
+          "Limitation of Liability",
+          "Damages",
+          "Liability Cap"
+        ],
+        "page_start": 1,
+        "page_end": 2,
+        "text": "8. Liability The Service Provider's total liability under this Agreement shall not exceed the total service fees paid by the Client during the three (3) months before the claim arose. Neither party shall be liable for indirect, incidental, or consequential damages."
+      },
+      {
+        "provision_id": "41_009",
+        "section_number": "9",
+        "provision": "Governing Law",
+        "specific_keywords": [
+          "Governing Law",
+          "Dispute Resolution",
+          "Arbitration",
+          "Court"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "9. Governing Law This Agreement shall be governed by and interpreted in accordance with the laws of Vietnam. Any dispute arising from this Agreement shall first be resolved through good-faith negotiation between the parties."
+      },
+      {
+        "provision_id": "41_010",
+        "section_number": "10",
+        "provision": "Notices",
+        "specific_keywords": [
+          "Notices",
+          "Written Notice"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "10. Notices All notices under this Agreement must be in writing and sent by email or registered mail to the contact address provided by each party."
+      },
+      {
+        "provision_id": "41_011",
+        "section_number": "11",
+        "provision": "Signatures",
+        "specific_keywords": [
+          "Signatures",
+          "Execution"
+        ],
+        "page_start": 2,
+        "page_end": 2,
+        "text": "11. Signatures By signing below, the parties agree to be bound by this Agreement. Service Provider: Alpha Solutions Ltd. Authorized Representative: ______________________ Date: ______________________ Client: Beta Retail JSC Authorized Representative: ______________________ Date: ______________________"
+      }
+    ]
+  }
+}
