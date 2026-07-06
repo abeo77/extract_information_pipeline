@@ -53,9 +53,6 @@ extract_information_pipeline/
 
 Run commands from the project directory:
 
-```powershell
-cd D:\deadlinefsoft\extract_information_pipeline
-```
 
 If you use the existing workspace virtual environment:
 
@@ -82,42 +79,13 @@ Minimum OpenAI-compatible configuration:
 
 ```env
 KEYWORD_LLM_API_KEY=your_llm_api_key_here
-KEYWORD_LLM_BASE_URL=https://your-llm-gateway.example.com/v1
+KEYWORD_LLM_BASE_URL=
 KEYWORD_LLM_PROVIDER=openai-compatible
 KEYWORD_LLM_MODEL=gpt-5.4-mini
 ```
 
-Supported provider values:
 
-```text
-openai-compatible
-openai
-grok
-groq
-gemini
-```
 
-Optional stage-specific routing:
-
-```env
-KEYWORD_LLM1_PROVIDER=groq
-KEYWORD_LLM1_MODEL=llama-3.3-70b-versatile
-KEYWORD_LLM1_API_KEY=...
-
-KEYWORD_LLM2_PROVIDER=openai-compatible
-KEYWORD_LLM2_MODEL=gpt-5.4-mini
-KEYWORD_LLM2_API_KEY=...
-KEYWORD_LLM2_BASE_URL=...
-```
-
-Provider-native keys are also supported:
-
-```env
-OPENAI_API_KEY=...
-XAI_API_KEY=...
-GROQ_API_KEY=...
-GOOGLE_API_KEY=...
-```
 
 Runtime tuning:
 
@@ -254,62 +222,3 @@ Result files are written to:
 data/output/
 ```
 
-## Report Notebook
-
-Use this notebook to generate comparison tables for trainer review:
-
-```text
-notebooks/extraction_output_report.ipynb
-```
-
-When you run all cells, the notebook reads every JSON file in `data/output` and displays:
-
-- run summary table
-- performance comparison table
-- full extracted content table
-- compact trainer review table
-
-It also saves CSV tables to:
-
-```text
-reports/run_summary_table.csv
-reports/performance_comparison_table.csv
-reports/extracted_content_table.csv
-reports/trainer_review_table.csv
-```
-
-A Markdown report may also be kept in:
-
-```text
-reports/extraction_output_comparison_report.md
-```
-
-## Testing
-
-Run all tests:
-
-```powershell
-..\venv\Scripts\python.exe -m pytest
-```
-
-Current test coverage focuses on:
-
-- segmentation
-- LLM1 input preparation
-- keyword extraction normalization
-- evidence extraction normalization
-- duplicate/synonym merging
-- result compaction and UI table formatting
-- pipeline configuration
-- evaluation comparison
-
-## Review Notes
-
-Current reviewed state:
-
-- UI has three tabs: `Segments`, `RUN`, and `Results`.
-- UI result output is rendered as a 4-column contract keyword extraction table.
-- UI run output includes step progress and LLM trace.
-- Evaluation is removed from the UI but still exists in API/tests.
-- The report notebook runs from either the project root or the `notebooks` folder.
-- The existing test suite passes with the current codebase.
