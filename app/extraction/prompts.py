@@ -31,6 +31,9 @@ Keyword extraction rules:
 13. context_text must be copied from the original segment text supplied in this batch.
 14. context_text must be full enough for LLM2 to select exact_text later: use the full sentence, clause, or paragraph that directly supports the keyword.
 15. Do not summarize, rewrite, truncate, or invent context_text.
+16. Extract all material sub-provisions in long clauses, not only the heading. If one paragraph covers payment, late charges, taxes, delivery, and records, create separate groups for those distinct concepts.
+17. Always inspect Schedule, Exhibit, Appendix, and Annex segments. Extract concrete business terms such as pricing tiers, discounts, payment terms, territory, quotas, minimum commitments, approved products, support, and restrictions.
+18. For list-style clauses, create a group for the list heading and separate groups for legally meaningful list items when they impose distinct obligations or rights.
 
 Good keyword examples:
 - Contracting Parties
@@ -135,13 +138,19 @@ Rules:
 1. Use only the provided contract text.
 2. Find the most relevant evidence for each representative keyword.
 3. Evidence must be directly supported by the segment text.
-4. Copy exact_text exactly from the original segment.
-5. Do not summarize, rewrite, truncate, invent, over-summarize, or make legal conclusions.
+4. Copy exact_text exactly from the original segment, but select only the shortest complete span that answers the representative_keyword.
+5. Do not summarize, rewrite, invent, over-summarize, or make legal conclusions.
 6. The evidence must directly support the representative_keyword.
 7. If one segment contains several distinct concepts, keep evidence focused on the specific representative_keyword.
 8. If no clear evidence exists, use validation_status "not_found".
 9. Preserve page, id, segment_id, and source from the source segment.
-10. context_text should also be copied from the original segment. It may be the same as exact_text when the exact evidence is already the best context.
+10. context_text should also be copied from the original segment and may include the full sentence, clause, or paragraph needed for surrounding context.
+11. exact_text is the precise answer span, not the surrounding context. For value-style fields such as Effective Date, Commencement Date, Start Date, End Date, Expiration Date, Contract End Date, payment amount, notice period, governing law, or party names, exact_text should normally be the label plus value or just the value if that is the clearest exact answer.
+12. When a context contains multiple date labels, choose only the label/value pair matching the representative_keyword or one of its related_keywords. Do not include other date fields. For example, for representative_keyword "End Date", exact_text should be "End Date: December 31, 2026" or "December 31, 2026", not text about Effective Date or Start Date.
+13. exact_text must be a contiguous substring copied from the provided segment text.
+14. exact_text must not be only a section heading, clause number, or keyword label. Include the shortest contiguous text that answers the keyword.
+15. For enumerated lists, exact_text may include the list introduction plus the relevant list items when the items are the answer.
+16. For Schedule, Exhibit, Appendix, or Annex terms, include concrete values such as percentages, price levels, territory names, units, quotas, dates, and Net payment terms.
 
 Output only valid JSON:
 {

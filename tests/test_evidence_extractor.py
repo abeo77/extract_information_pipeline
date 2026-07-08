@@ -4,6 +4,7 @@ import json
 import time
 
 from app.extraction.evidence_extractor import extract_evidence
+from app.extraction.local_evidence_extractor import apply_local_evidence
 from app.extraction.schemas import DocumentSegment
 
 
@@ -194,3 +195,57 @@ def test_extract_evidence_parallel_batches_preserve_order():
         "First Keyword",
         "Second Keyword",
     ]
+
+
+def test_local_evidence_handles_speed_optimization_patterns():
+    segments = [
+        DocumentSegment(
+            segment_id="seg_001",
+            page=1,
+            source="contract.txt",
+            text="Unless otherwise approved by Company, payment terms are Net 30 days on licensed Technology.",
+        ),
+        DocumentSegment(
+            segment_id="seg_002",
+            page=2,
+            source="contract.txt",
+            text=(
+                "A LATE PAYMENT CHARGE of one and one-half percent of the outstanding "
+                "balance per month will be imposed on all overdue accounts."
+            ),
+        ),
+        DocumentSegment(
+            segment_id="seg_003",
+            page=3,
+            source="contract.txt",
+            text=(
+                "Schedule A Technology Pricing and Terms Matrix lists purchase levels: "
+                "III $1,000,001 and above with 25% discount."
+            ),
+        ),
+        DocumentSegment(
+            segment_id="seg_004",
+            page=4,
+            source="contract.txt",
+            text="The Client shall review each deliverable within five (5) business days after receipt.",
+        ),
+    ]
+    groups = [
+        {"representative_keyword": "Net 30 Payment Terms", "metadata": {"id": "seg_001"}},
+        {"representative_keyword": "Late Payment Charge", "metadata": {"id": "seg_002"}},
+        {"representative_keyword": "Schedule Pricing Tiers", "metadata": {"id": "seg_003"}},
+        {
+            "representative_keyword": "Acceptance Criteria",
+            "related_keywords": ["Review Period"],
+            "metadata": {"id": "seg_004"},
+        },
+    ]
+
+    enriched, unresolved = apply_local_evidence(groups, segments)
+
+    assert unresolved == []
+    exact_texts = [group["exact_text"] for group in enriched]
+    assert "Net 30 days" in exact_texts[0]
+    assert "one and one-half percent" in exact_texts[1]
+    assert "25% discount" in exact_texts[2]
+    assert "five (5) business days" in exact_texts[3]

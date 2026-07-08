@@ -15,6 +15,7 @@ from app.extraction.llm_json import (
 )
 from app.extraction.prompts import LLM2_EVIDENCE_EXTRACTION_PROMPT
 from app.extraction.schemas import DocumentSegment
+from app.services.llm_limiter import invoke_with_llm_limit
 from app.services.parallel_service import ordered_parallel_map_with_progress
 
 
@@ -25,6 +26,7 @@ def extract_evidence(
     batch_size: int = 10,
     max_segments_per_group: int = 5,
     max_parallel_calls: int = 1,
+    max_total_llm_calls: int | None = None,
     on_llm_event=None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Attach LLM2 evidences to LLM1 keyword groups in small batches."""
@@ -47,7 +49,7 @@ def extract_evidence(
 
     batch_results = ordered_parallel_map_with_progress(
         batches,
-        lambda batch: _extract_evidence_batch(batch, chat_model),
+        lambda batch: _extract_evidence_batch(batch, chat_model, max_total_llm_calls),
         max_workers=max_parallel_calls,
         on_result=lambda index, result: _notify_llm_event(
             on_llm_event,
@@ -63,10 +65,14 @@ def extract_evidence(
     return enriched_groups, len(batches)
 
 
-def _extract_evidence_batch(batch: dict[str, Any], chat_model) -> dict[str, Any]:
+def _extract_evidence_batch(
+    batch: dict[str, Any],
+    chat_model,
+    max_total_llm_calls: int | None = None,
+) -> dict[str, Any]:
     prompt = _build_llm2_prompt(batch)
     started = time.perf_counter()
-    response = chat_model.invoke(prompt)
+    response = invoke_with_llm_limit(chat_model, prompt, max_total_llm_calls)
     raw_response = response_text(response)
     payload = parse_json_response(raw_response, "LLM2")
     returned_groups = require_list(payload, "keyword_groups", "LLM2")
@@ -97,6 +103,8 @@ def _build_evidence_batches(
         groups = keyword_groups[start : start + batch_size]
         segment_ids = []
         for group in groups:
+            if _context_segment_payload(group):
+                continue
             for segment_id in _candidate_segment_ids(
                 group,
                 segments,
@@ -110,6 +118,11 @@ def _build_evidence_batches(
             {
                 "keyword_groups": [_keyword_group_payload(group) for group in groups],
                 "segments": [
+                    payload
+                    for payload in [_context_segment_payload(group) for group in groups]
+                    if payload
+                ]
+                + [
                     _segment_payload(segment_lookup[segment_id])
                     for segment_id in segment_ids
                     if segment_id in segment_lookup
@@ -162,6 +175,19 @@ def _segment_payload(segment: DocumentSegment) -> dict[str, Any]:
         "page": segment.page,
         "source": segment.source,
         "text": segment.text,
+    }
+
+
+def _context_segment_payload(group: dict[str, Any]) -> dict[str, Any] | None:
+    context_text = str(group.get("context_text") or "").strip()
+    if not context_text:
+        return None
+    metadata = group.get("metadata") if isinstance(group.get("metadata"), dict) else {}
+    return {
+        "id": metadata.get("id") or metadata.get("segment_id"),
+        "page": metadata.get("page"),
+        "source": metadata.get("source"),
+        "text": context_text,
     }
 
 

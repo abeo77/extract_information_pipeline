@@ -31,7 +31,7 @@ def _compact_keyword_group(group: dict) -> dict:
         "representative_keyword": group.get("representative_keyword"),
         "related_keywords": group.get("related_keywords", []),
         "context_text": group.get("context_text") or evidence.get("context_text"),
-        "exact_text": group.get("exact_text") or evidence.get("exact_text"),
+        "exact_text": _compact_exact_text(group, evidence),
         "metadata": _compact_metadata(group.get("metadata", {}), evidence),
     }
     return {key: value for key, value in compact.items() if value not in (None, "", [], {})}
@@ -43,6 +43,15 @@ def _primary_evidence(group: dict) -> dict:
         evidence = evidences[0]
         return evidence if isinstance(evidence, dict) else {}
     return {}
+
+
+def _compact_exact_text(group: dict, evidence: dict) -> str | None:
+    exact_text = group.get("exact_text") or evidence.get("exact_text")
+    if exact_text:
+        return exact_text
+    if evidence:
+        return None
+    return group.get("context_text")
 
 
 def _compact_metadata(metadata: dict, evidence: dict) -> dict:

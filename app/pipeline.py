@@ -3,9 +3,12 @@ import sys
 from pathlib import Path
 from typing import Callable
 
-from app.extraction.evidence_extractor import extract_evidence
 from app.extraction.group_merger import merge_keyword_groups
+from app.extraction.evidence_extractor import extract_evidence
 from app.extraction.keyword_extractor import extract_keywords
+from app.extraction.coverage_extractor import apply_coverage_pass
+from app.extraction.group_filter import filter_keyword_groups
+from app.extraction.local_evidence_extractor import apply_local_evidence
 from app.extraction.llm1_input import prepare_llm1_batches
 from app.extraction.schemas import LlmCallStats, PipelineResult
 from app.loaders.document_loader import load_document
@@ -80,6 +83,7 @@ def run_pipeline(
         llm1_chat_model,
         batch_size=config.keyword_batch_size,
         max_parallel_calls=config.max_parallel_llm_calls,
+        max_total_llm_calls=config.max_total_llm_calls,
         on_llm_event=_llm_event_callback(
             on_llm_event,
             provider=config.llm1_provider,
@@ -100,37 +104,6 @@ def run_pipeline(
         keyword_groups=len(keyword_groups),
         batches=keyword_extraction_batches,
     )
-    keyword_groups_for_evidence = len(keyword_groups)
-
-    timer = StepTimer()
-    llm2_chat_model = create_chat_model(config, stage="llm2")
-    keyword_groups, evidence_extraction_batches = extract_evidence(
-        keyword_groups,
-        segments,
-        llm2_chat_model,
-        batch_size=config.evidence_batch_size,
-        max_segments_per_group=config.max_evidence_segments_per_group,
-        max_parallel_calls=config.max_parallel_llm_calls,
-        on_llm_event=_llm_event_callback(
-            on_llm_event,
-            provider=config.llm2_provider,
-            model=config.llm2_model,
-        ),
-    )
-    print(
-        f"[LLM2] Extracted evidence for {len(keyword_groups)} keyword group(s) "
-        f"in {evidence_extraction_batches} batch(es), "
-        f"model={config.llm2_provider}/{config.llm2_model}, "
-        f"parallel={config.max_parallel_llm_calls}, {timer.elapsed():.2f}s"
-    )
-    _notify_step(
-        on_step,
-        "llm2",
-        "LLM2 evidence extraction",
-        timer.elapsed(),
-        keyword_groups=len(keyword_groups),
-        batches=evidence_extraction_batches,
-    )
 
     timer = StepTimer()
     keyword_groups = merge_keyword_groups(keyword_groups)
@@ -143,6 +116,110 @@ def run_pipeline(
     )
 
     timer = StepTimer()
+    coverage_added_groups = 0
+    coverage_candidate_groups = 0
+    coverage_enabled = config.coverage_enabled and config.coverage_mode != "off"
+    if coverage_enabled:
+        keyword_groups, coverage_added_groups, coverage_candidate_groups = apply_coverage_pass(
+            keyword_groups,
+            segments,
+            max_groups=config.coverage_max_groups,
+            mode=config.coverage_mode,
+        )
+        if coverage_added_groups:
+            keyword_groups = merge_keyword_groups(keyword_groups)
+    print(
+        f"[COVERAGE] Added {coverage_added_groups}/{coverage_candidate_groups} deterministic group(s), "
+        f"total={len(keyword_groups)}, {timer.elapsed():.2f}s"
+    )
+    _notify_step(
+        on_step,
+        "coverage",
+        "Deterministic coverage pass",
+        timer.elapsed(),
+        coverage_candidate_groups=coverage_candidate_groups,
+        coverage_added_groups=coverage_added_groups,
+        keyword_groups=len(keyword_groups),
+    )
+
+    timer = StepTimer()
+    filtered_groups = 0
+    if config.filter_low_confidence_groups:
+        keyword_groups, filtered_groups = filter_keyword_groups(keyword_groups)
+        if filtered_groups:
+            keyword_groups = merge_keyword_groups(keyword_groups)
+    print(
+        f"[FILTER] Removed {filtered_groups} low-confidence group(s), "
+        f"total={len(keyword_groups)}, {timer.elapsed():.2f}s"
+    )
+    _notify_step(
+        on_step,
+        "filter",
+        "Filter low-confidence groups",
+        timer.elapsed(),
+        filtered_groups=filtered_groups,
+        keyword_groups=len(keyword_groups),
+    )
+
+    timer = StepTimer()
+    local_exact_groups = 0
+    llm2_fallback_groups = len(keyword_groups)
+    unresolved_indexes = list(range(len(keyword_groups)))
+    if config.fast_exact and keyword_groups:
+        keyword_groups, unresolved_indexes = apply_local_evidence(keyword_groups, segments)
+        local_exact_groups = len(keyword_groups) - len(unresolved_indexes)
+        llm2_fallback_groups = len(unresolved_indexes)
+        print(
+            f"[LOCAL] Attached exact evidence for {local_exact_groups} group(s); "
+            f"{llm2_fallback_groups} group(s) need LLM2, {timer.elapsed():.2f}s"
+        )
+    _notify_step(
+        on_step,
+        "local_exact",
+        "Local exact evidence extraction",
+        timer.elapsed(),
+        local_exact_groups=local_exact_groups,
+        llm2_fallback_groups=llm2_fallback_groups,
+    )
+
+    timer = StepTimer()
+    evidence_extraction_batches = 0
+    if unresolved_indexes:
+        llm2_groups = [keyword_groups[index] for index in unresolved_indexes]
+        llm2_chat_model = create_chat_model(config, stage="llm2")
+        llm2_groups, evidence_extraction_batches = extract_evidence(
+            llm2_groups,
+            segments,
+            llm2_chat_model,
+            batch_size=config.evidence_batch_size,
+            max_segments_per_group=config.max_evidence_segments_per_group,
+            max_parallel_calls=config.max_parallel_llm_calls,
+            max_total_llm_calls=config.max_total_llm_calls,
+            on_llm_event=_llm_event_callback(
+                on_llm_event,
+                provider=config.llm2_provider,
+                model=config.llm2_model,
+            ),
+        )
+        for index, group in zip(unresolved_indexes, llm2_groups, strict=False):
+            keyword_groups[index] = group
+        print(
+            f"[LLM2] Attached exact evidence for {len(llm2_groups)} fallback group(s) "
+            f"in {evidence_extraction_batches} batch(es), "
+            f"model={config.llm2_provider}/{config.llm2_model}, "
+            f"parallel={config.max_parallel_llm_calls}, {timer.elapsed():.2f}s"
+        )
+    _notify_step(
+        on_step,
+        "llm2",
+        "LLM2 evidence extraction",
+        timer.elapsed(),
+        keyword_groups=len(keyword_groups),
+        batches=evidence_extraction_batches,
+        fallback_groups=llm2_fallback_groups,
+    )
+
+    timer = StepTimer()
     result = PipelineResult(
         document_name=Path(file_path).name,
         processing_time_seconds=round(total.elapsed(), 2),
@@ -151,8 +228,14 @@ def run_pipeline(
         total_keyword_groups=len(keyword_groups),
         llm_calls=LlmCallStats(
             keyword_extraction_batches=keyword_extraction_batches,
-            keyword_groups_for_evidence=keyword_groups_for_evidence,
+            keyword_groups_for_evidence=len(keyword_groups),
+            coverage_candidate_groups=coverage_candidate_groups,
+            coverage_added_groups=coverage_added_groups,
+            filtered_groups=filtered_groups,
+            local_exact_groups=local_exact_groups,
+            llm2_fallback_groups=llm2_fallback_groups,
             evidence_extraction_batches=evidence_extraction_batches,
+            max_total_llm_calls=config.max_total_llm_calls,
         ),
         keyword_groups=keyword_groups,
     )

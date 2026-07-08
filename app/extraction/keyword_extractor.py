@@ -16,6 +16,7 @@ from app.extraction.llm_json import (
 )
 from app.extraction.prompts import LLM1_KEYWORD_EXTRACTION_PROMPT
 from app.extraction.schemas import DocumentSegment, Llm1BatchInput
+from app.services.llm_limiter import invoke_with_llm_limit
 from app.services.parallel_service import ordered_parallel_map_with_progress
 
 
@@ -52,13 +53,14 @@ def extract_keywords(
     chat_model,
     batch_size: int = 50,
     max_parallel_calls: int = 1,
+    max_total_llm_calls: int | None = None,
     on_llm_event=None,
 ) -> tuple[list[dict[str, Any]], int]:
     """Extract LLM1 keyword groups from compact segment batches."""
     batches = prepare_llm1_batches(segments, batch_size=batch_size)
     batch_results = ordered_parallel_map_with_progress(
         batches,
-        lambda batch: _extract_keyword_batch(batch, chat_model),
+        lambda batch: _extract_keyword_batch(batch, chat_model, max_total_llm_calls),
         max_workers=max_parallel_calls,
         on_result=lambda index, result: _notify_llm_event(
             on_llm_event,
@@ -76,10 +78,14 @@ def extract_keywords(
     return remove_reason_fields(keyword_groups), len(batches)
 
 
-def _extract_keyword_batch(batch: Llm1BatchInput, chat_model) -> dict[str, Any]:
+def _extract_keyword_batch(
+    batch: Llm1BatchInput,
+    chat_model,
+    max_total_llm_calls: int | None = None,
+) -> dict[str, Any]:
     prompt = _build_llm1_prompt(batch)
     started = time.perf_counter()
-    response = chat_model.invoke(prompt)
+    response = invoke_with_llm_limit(chat_model, prompt, max_total_llm_calls)
     raw_response = response_text(response)
     payload = parse_json_response(raw_response, "LLM1")
     groups = require_list(payload, "keyword_groups", "LLM1")

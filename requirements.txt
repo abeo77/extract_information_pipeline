@@ -9,5 +9,6 @@ pypdf
 python-dotenv
 python-multipart
 pytest
-streamlit
+redis
+rq
 uvicorn

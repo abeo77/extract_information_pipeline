@@ -45,13 +45,76 @@ def test_merge_keyword_groups_deduplicates_representative_keyword():
     merged = merge_keyword_groups(groups)
 
     assert len(merged) == 1
-    assert merged[0]["representative_keyword"] == "Contracting Parties"
+    assert merged[0]["representative_keyword"] == "Parties"
     assert merged[0]["metadata"] == {"page": 1}
     assert "made between" in merged[0]["exact_text"]
     assert merged[0]["related_keywords"] == [
         "Service Provider",
         "Client",
+        "Contracting Parties",
         "Alpha Solutions Ltd.",
         "Beta Retail JSC",
-        "Contracting Parties",
     ]
+
+
+def test_merge_keyword_groups_combines_party_roles_only_in_intro_context():
+    groups = [
+        {
+            "representative_keyword": "Service Provider",
+            "related_keywords": [],
+            "context_text": (
+                'This Agreement is made between Alpha Solutions Ltd. ("Service Provider") '
+                'and Beta Retail JSC ("Client").'
+            ),
+        },
+        {
+            "representative_keyword": "Client",
+            "related_keywords": [],
+            "context_text": (
+                'This Agreement is made between Alpha Solutions Ltd. ("Service Provider") '
+                'and Beta Retail JSC ("Client").'
+            ),
+        },
+        {
+            "representative_keyword": "Client",
+            "related_keywords": [],
+            "context_text": "The Client shall pay all invoices within thirty days.",
+        },
+    ]
+
+    merged = merge_keyword_groups(groups)
+
+    assert [group["representative_keyword"] for group in merged] == ["Parties", "Client"]
+    assert "Service Provider" in merged[0]["related_keywords"]
+
+
+def test_merge_keyword_groups_merges_payment_adjacent_only_same_context():
+    groups = [
+        {
+            "representative_keyword": "Service Fee",
+            "related_keywords": ["monthly fee"],
+            "context_text": "Client shall pay a monthly service fee of USD 1,000.",
+            "metadata": {"id": "seg_001"},
+        },
+        {
+            "representative_keyword": "Payment Terms",
+            "related_keywords": ["invoice"],
+            "context_text": "Client shall pay a monthly service fee of USD 1,000.",
+            "metadata": {"id": "seg_001"},
+        },
+        {
+            "representative_keyword": "Payment Terms",
+            "related_keywords": ["Net 30"],
+            "context_text": "Invoices for support services are due Net 30.",
+            "metadata": {"id": "seg_009"},
+        },
+    ]
+
+    merged = merge_keyword_groups(groups)
+
+    assert [group["representative_keyword"] for group in merged] == [
+        "Payment Terms",
+        "Payment Terms",
+    ]
+    assert "Service Fee" in merged[0]["related_keywords"]
+    assert merged[1]["context_text"] == "Invoices for support services are due Net 30."

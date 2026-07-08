@@ -47,3 +47,44 @@ def test_compact_result_removes_repeated_evidences():
         }
     ]
     assert "keyword_items" not in compact
+
+
+def test_compact_result_uses_context_as_exact_text_without_llm2_evidence():
+    compact = compact_result(
+        {
+            "keyword_groups": [
+                {
+                    "representative_keyword": "Termination",
+                    "related_keywords": [],
+                    "context_text": "Either party may terminate on 30 days notice.",
+                }
+            ]
+        }
+    )
+
+    assert compact["keyword_groups"][0]["exact_text"] == (
+        "Either party may terminate on 30 days notice."
+    )
+
+
+def test_compact_result_does_not_promote_llm2_context_to_exact_text():
+    compact = compact_result(
+        {
+            "keyword_groups": [
+                {
+                    "representative_keyword": "End Date",
+                    "related_keywords": ["Expiration Date"],
+                    "context_text": "End Date: December 31, 2026. Effective Date: January 1, 2026.",
+                    "evidences": [
+                        {
+                            "context_text": "End Date: December 31, 2026. Effective Date: January 1, 2026.",
+                            "exact_text": "",
+                            "validation_status": "passed",
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+
+    assert "exact_text" not in compact["keyword_groups"][0]

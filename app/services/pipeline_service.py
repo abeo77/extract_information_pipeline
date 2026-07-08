@@ -10,11 +10,17 @@ from dataclasses import dataclass, replace
 DEFAULT_LLM_PROVIDER = "openai-compatible"
 DEFAULT_LLM_MODEL = "gpt-5.4-mini"
 DEFAULT_GROQ_LLM_MODEL = "llama-3.3-70b-versatile"
-DEFAULT_KEYWORD_BATCH_SIZE = 8
+DEFAULT_KEYWORD_BATCH_SIZE = 48
 DEFAULT_GROUPING_BATCH_SIZE = DEFAULT_KEYWORD_BATCH_SIZE
-DEFAULT_EVIDENCE_BATCH_SIZE = 20
+DEFAULT_EVIDENCE_BATCH_SIZE = 50
 DEFAULT_MAX_EVIDENCE_SEGMENTS_PER_GROUP = 2
-DEFAULT_MAX_PARALLEL_LLM_CALLS = 4
+DEFAULT_MAX_PARALLEL_LLM_CALLS = 3
+DEFAULT_MAX_TOTAL_LLM_CALLS = 8
+DEFAULT_FAST_EXACT = True
+DEFAULT_COVERAGE_ENABLED = True
+DEFAULT_COVERAGE_MAX_GROUPS = 5
+DEFAULT_COVERAGE_MODE = "adaptive"
+DEFAULT_FILTER_LOW_CONFIDENCE_GROUPS = True
 
 SUPPORTED_LLM_PROVIDERS = ("openai-compatible", "openai", "grok", "groq", "gemini")
 SUGGESTED_LLM_MODELS = ("gpt-5.4-mini", "grok-4.3", "gemini-3.5-flash")
@@ -44,6 +50,7 @@ PROVIDER_BASE_URL_ENVS = {
 DEFAULT_BASE_URLS = {"grok": "https://api.x.ai/v1"}
 DEFAULT_STAGE_MODELS = {"groq": DEFAULT_GROQ_LLM_MODEL}
 TRUE_VALUES = {"1", "true", "yes", "y"}
+FALSE_VALUES = {"0", "false", "no", "n"}
 
 
 @dataclass(frozen=True)
@@ -64,6 +71,12 @@ class PipelineConfig:
     evidence_batch_size: int = DEFAULT_EVIDENCE_BATCH_SIZE
     max_evidence_segments_per_group: int = DEFAULT_MAX_EVIDENCE_SEGMENTS_PER_GROUP
     max_parallel_llm_calls: int = DEFAULT_MAX_PARALLEL_LLM_CALLS
+    max_total_llm_calls: int = DEFAULT_MAX_TOTAL_LLM_CALLS
+    fast_exact: bool = DEFAULT_FAST_EXACT
+    coverage_enabled: bool = DEFAULT_COVERAGE_ENABLED
+    coverage_max_groups: int = DEFAULT_COVERAGE_MAX_GROUPS
+    coverage_mode: str = DEFAULT_COVERAGE_MODE
+    filter_low_confidence_groups: bool = DEFAULT_FILTER_LOW_CONFIDENCE_GROUPS
     include_admin_sections: bool = False
 
     @property
@@ -109,6 +122,39 @@ def build_config(**overrides) -> PipelineConfig:
             DEFAULT_MAX_PARALLEL_LLM_CALLS,
             env_name="MAX_PARALLEL_LLM_CALLS",
             minimum=1,
+        ),
+        max_total_llm_calls=_int_override(
+            overrides,
+            "max_total_llm_calls",
+            DEFAULT_MAX_TOTAL_LLM_CALLS,
+            env_name="MAX_TOTAL_LLM_CALLS",
+            minimum=1,
+        ),
+        fast_exact=_bool_override(
+            overrides,
+            "fast_exact",
+            "KEYWORD_FAST_EXACT",
+            DEFAULT_FAST_EXACT,
+        ),
+        coverage_enabled=_bool_override(
+            overrides,
+            "coverage_enabled",
+            "KEYWORD_COVERAGE_ENABLED",
+            DEFAULT_COVERAGE_ENABLED,
+        ),
+        coverage_max_groups=_int_override(
+            overrides,
+            "coverage_max_groups",
+            DEFAULT_COVERAGE_MAX_GROUPS,
+            env_name="KEYWORD_COVERAGE_MAX_GROUPS",
+            minimum=0,
+        ),
+        coverage_mode=_coverage_mode(overrides.get("coverage_mode")),
+        filter_low_confidence_groups=_bool_override(
+            overrides,
+            "filter_low_confidence_groups",
+            "KEYWORD_FILTER_LOW_CONFIDENCE_GROUPS",
+            DEFAULT_FILTER_LOW_CONFIDENCE_GROUPS,
         ),
         include_admin_sections=_include_admin(overrides.get("include_admin_sections")),
     )
@@ -311,3 +357,32 @@ def _include_admin(value: object | None) -> bool:
     if value is None:
         value = os.getenv("INCLUDE_ADMIN_SECTIONS", "false")
     return str(value).strip().lower() in TRUE_VALUES
+
+
+def _coverage_mode(value: object | None) -> str:
+    normalized = _clean_optional(value) or os.getenv("KEYWORD_COVERAGE_MODE") or DEFAULT_COVERAGE_MODE
+    normalized = normalized.strip().lower()
+    if normalized in {"off", "none", "disabled"}:
+        return "off"
+    if normalized in {"broad", "legacy"}:
+        return "broad"
+    return "adaptive"
+
+
+def _bool_override(
+    overrides: dict,
+    key: str,
+    env_name: str,
+    default: bool,
+) -> bool:
+    value = overrides.get(key)
+    if value is None:
+        value = os.getenv(env_name)
+    if value is None:
+        return default
+    normalized = str(value).strip().lower()
+    if normalized in TRUE_VALUES:
+        return True
+    if normalized in FALSE_VALUES:
+        return False
+    return bool(value)

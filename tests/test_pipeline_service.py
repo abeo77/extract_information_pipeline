@@ -50,3 +50,32 @@ def test_keyword_batch_size_keeps_grouping_alias():
     assert new_config.keyword_batch_size == 7
     assert new_config.grouping_batch_size == 7
     assert old_config.keyword_batch_size == 9
+
+
+def test_balanced_cli_core_defaults_and_overrides(monkeypatch):
+    monkeypatch.delenv("MAX_TOTAL_LLM_CALLS", raising=False)
+    monkeypatch.delenv("KEYWORD_COVERAGE_MODE", raising=False)
+    monkeypatch.delenv("KEYWORD_FILTER_LOW_CONFIDENCE_GROUPS", raising=False)
+    config = build_config()
+
+    assert config.keyword_batch_size == 48
+    assert config.max_parallel_llm_calls == 3
+    assert config.max_total_llm_calls == 8
+    assert config.coverage_enabled is True
+    assert config.coverage_max_groups == 5
+    assert config.coverage_mode == "adaptive"
+    assert config.filter_low_confidence_groups is True
+
+    overridden = build_config(
+        max_total_llm_calls=5,
+        coverage_enabled=False,
+        coverage_max_groups=2,
+        coverage_mode="broad",
+        filter_low_confidence_groups=False,
+    )
+
+    assert overridden.max_total_llm_calls == 5
+    assert overridden.coverage_enabled is False
+    assert overridden.coverage_max_groups == 2
+    assert overridden.coverage_mode == "broad"
+    assert overridden.filter_low_confidence_groups is False
