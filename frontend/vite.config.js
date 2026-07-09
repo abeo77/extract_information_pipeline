@@ -10,6 +10,8 @@ export default defineConfig({
     proxy: {
       "/health": apiTarget,
       "/upload": apiTarget,
+      "/batches": apiTarget,
+      "/jobs": apiTarget,
       "/pipeline": apiTarget,
       "/results": apiTarget,
       "/evaluation": apiTarget

@@ -166,17 +166,19 @@ def _truth_items(truth: dict) -> list[dict[str, Any]]:
 def _item_record(group: dict[str, Any], source: str) -> dict[str, Any]:
     representative = str(group.get("representative_keyword") or "").strip()
     grouped_keywords = _grouped_keywords(group)
-    context_text = str(group.get("context_text") or "").strip()
-    exact_text = str(
-        group.get("exact_extracted_information")
-        or group.get("exact_information")
-        or group.get("exact_text")
+    evidence = _first_evidence(group)
+    context_text = str(
+        group.get("context_text")
+        or group.get("text")
+        or evidence.get("context_text")
+        or evidence.get("evidence_text")
         or ""
     ).strip()
+    exact_text = str(_exact_text(group, evidence)).strip()
     metadata = group.get("metadata") if isinstance(group.get("metadata"), dict) else {}
-    page = group.get("page") or metadata.get("page")
-    source_value = group.get("source") or metadata.get("source")
-    aliases = {_normalize_key(value) for value in [representative, *grouped_keywords] if str(value).strip()}
+    page = group.get("page") or metadata.get("page") or evidence.get("page")
+    source_value = group.get("source") or metadata.get("source") or evidence.get("source")
+    aliases = _aliases([representative, *grouped_keywords])
     return {
         "id": group.get("id"),
         "source_kind": source,
@@ -195,10 +197,30 @@ def _item_record(group: dict[str, Any], source: str) -> dict[str, Any]:
 def _grouped_keywords(group: dict[str, Any]) -> list[str]:
     values = group.get("grouped_keywords")
     if values is None:
-        values = group.get("related_keywords", [])
+        values = group.get("related_keywords")
+    if values is None:
+        values = group.get("specific_keywords", [])
     if not isinstance(values, list):
         values = [values]
     return [str(value).strip() for value in values if str(value).strip()]
+
+
+def _first_evidence(group: dict[str, Any]) -> dict[str, Any]:
+    evidences = group.get("evidences")
+    if isinstance(evidences, list) and evidences and isinstance(evidences[0], dict):
+        return evidences[0]
+    return {}
+
+
+def _exact_text(group: dict[str, Any], evidence: dict[str, Any]) -> object:
+    return (
+        group.get("exact_extracted_information")
+        or group.get("exact_information")
+        or group.get("exact_text")
+        or evidence.get("exact_text")
+        or evidence.get("evidence_text")
+        or ""
+    )
 
 
 def _match_items(
@@ -215,7 +237,7 @@ def _match_items(
                 continue
             if not _keyword_alias_match(predicted, truth):
                 continue
-            score = _grouping_match_score(predicted, truth)
+            score = _candidate_match_score(predicted, truth)
             if score > best_score:
                 best_index = predicted_index
                 best_score = score
@@ -233,13 +255,54 @@ def _match_items(
 
 
 def _keyword_alias_match(predicted: dict[str, Any], truth: dict[str, Any]) -> bool:
+    return _keyword_match_score(predicted, truth) > 0
+
+
+def _candidate_match_score(predicted: dict[str, Any], truth: dict[str, Any]) -> float:
+    return (
+        _keyword_match_score(predicted, truth) * 0.35
+        + _grouping_match_score(predicted, truth) * 0.20
+        + _context_match_score(predicted, truth) * 0.20
+        + _exact_information_match_score(predicted, truth) * 0.20
+        + _page_match_score(predicted, truth) * 0.05
+    )
+
+
+def _keyword_match_score(predicted: dict[str, Any], truth: dict[str, Any]) -> float:
     predicted_key = predicted["normalized_key"]
     truth_key = truth["normalized_key"]
-    return (
+    predicted_aliases = predicted["aliases"]
+    truth_aliases = truth["aliases"]
+    if (
         predicted_key == truth_key
-        or truth_key in predicted["aliases"]
-        or predicted_key in truth["aliases"]
+        or truth_key in predicted_aliases
+        or predicted_key in truth_aliases
+        or bool(predicted_aliases & truth_aliases)
+    ):
+        return 1.0
+
+    predicted_canonical = {_canonical_key(value) for value in predicted_aliases}
+    truth_canonical = {_canonical_key(value) for value in truth_aliases}
+    predicted_canonical.discard("")
+    truth_canonical.discard("")
+    if predicted_canonical & truth_canonical:
+        return 0.95
+
+    best_similarity = max(
+        (
+            SequenceMatcher(None, predicted_value, truth_value).ratio()
+            for predicted_value in predicted_aliases
+            for truth_value in truth_aliases
+        ),
+        default=0.0,
     )
+    if best_similarity >= 0.88:
+        return 0.9
+
+    token_score = _label_token_overlap(predicted_aliases, truth_aliases)
+    if token_score >= 0.5 and _context_match_score(predicted, truth) >= 0.6:
+        return 0.85
+    return 0.0
 
 
 def _score_match(predicted: dict[str, Any], truth: dict[str, Any]) -> dict[str, Any]:
@@ -262,16 +325,18 @@ def _score_match(predicted: dict[str, Any], truth: dict[str, Any]) -> dict[str, 
     }
 
 
-def _keyword_match_score(predicted: dict[str, Any], truth: dict[str, Any]) -> float:
-    return 1.0 if _keyword_alias_match(predicted, truth) else 0.0
-
-
 def _grouping_match_score(predicted: dict[str, Any], truth: dict[str, Any]) -> float:
     truth_aliases = truth["aliases"]
     predicted_aliases = predicted["aliases"]
     if not truth_aliases:
         return 0.0
-    return _ratio(len(truth_aliases & predicted_aliases), len(truth_aliases))
+    exact_score = _ratio(len(truth_aliases & predicted_aliases), len(truth_aliases))
+    truth_canonical = {_canonical_key(value) for value in truth_aliases}
+    predicted_canonical = {_canonical_key(value) for value in predicted_aliases}
+    truth_canonical.discard("")
+    predicted_canonical.discard("")
+    canonical_score = _ratio(len(truth_canonical & predicted_canonical), len(truth_canonical))
+    return max(exact_score, canonical_score * 0.95)
 
 
 def _context_match_score(predicted: dict[str, Any], truth: dict[str, Any]) -> float:
@@ -359,6 +424,53 @@ def _normalize_key(value: object) -> str:
     return re.sub(r"[^a-z0-9]+", " ", str(value or "").casefold()).strip()
 
 
+def _aliases(values: list[object]) -> set[str]:
+    aliases: set[str] = set()
+    for value in values:
+        normalized = _normalize_key(value)
+        if not normalized:
+            continue
+        aliases.add(normalized)
+        canonical = _canonical_key(normalized)
+        if canonical:
+            aliases.add(canonical)
+    return aliases
+
+
+def _canonical_key(value: object) -> str:
+    normalized = _normalize_key(value)
+    if not normalized:
+        return ""
+    tokens = [_canonical_token(token) for token in normalized.split()]
+    tokens = [token for token in tokens if token and token not in _LABEL_STOPWORDS]
+    return " ".join(tokens)
+
+
+def _canonical_token(token: str) -> str:
+    token = _TOKEN_EQUIVALENTS.get(token, token)
+    if token.endswith("ies") and len(token) > 4:
+        return f"{token[:-3]}y"
+    if token.endswith("s") and not token.endswith("ss") and len(token) > 3:
+        return token[:-1]
+    return token
+
+
+def _label_token_overlap(predicted_aliases: set[str], truth_aliases: set[str]) -> float:
+    best = 0.0
+    for predicted in predicted_aliases:
+        predicted_tokens = set(_canonical_key(predicted).split())
+        if not predicted_tokens:
+            continue
+        for truth in truth_aliases:
+            truth_tokens = set(_canonical_key(truth).split())
+            if not truth_tokens:
+                continue
+            overlap = len(predicted_tokens & truth_tokens)
+            score = _ratio(overlap, min(len(predicted_tokens), len(truth_tokens)))
+            best = max(best, score)
+    return best
+
+
 def _normalize_text(value: object) -> str:
     return re.sub(r"\s+", " ", str(value or "").strip().casefold())
 
@@ -369,6 +481,25 @@ def _tokens(value: str) -> set[str]:
 
 def _ratio(numerator: float, denominator: float) -> float:
     return numerator / denominator if denominator else 0.0
+
+
+_LABEL_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "by",
+    "for",
+    "in",
+    "of",
+    "or",
+    "the",
+    "to",
+}
+
+_TOKEN_EQUIVALENTS = {
+    "non": "no",
+    "venue": "jurisdiction",
+}
 
 
 def main(argv: list[str] | None = None) -> int:

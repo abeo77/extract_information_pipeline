@@ -7,6 +7,7 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from api.schemas.request_schemas import EvaluationRequest
 from api.schemas.response_schemas import GroundTruthListResponse, UploadResponse
 from app.evaluation.evaluate_ground_truth import compare_keywords
+from app.evaluation.report_service import load_evaluation_report, list_evaluation_reports
 from app.services.file_service import GROUND_TRUTH_DIR, ensure_data_dirs, save_ground_truth_bytes
 from app.services.result_service import load_json
 
@@ -35,3 +36,16 @@ async def upload_ground_truth(file: UploadFile = File(...)) -> UploadResponse:
 def list_ground_truth() -> GroundTruthListResponse:
     ensure_data_dirs()
     return GroundTruthListResponse(files=sorted(GROUND_TRUTH_DIR.glob("*.json")))
+
+
+@router.get("/reports")
+def list_reports() -> dict:
+    return list_evaluation_reports()
+
+
+@router.get("/reports/{filename}")
+def get_report(filename: str) -> dict:
+    try:
+        return load_evaluation_report(filename)
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail="Evaluation report not found") from error
